@@ -90,57 +90,6 @@
       });
     }
 
-    // ================= NIGHT SKY TWINKLE =================
-    (function nightSkyTwinkle() {
-      if (document.getElementById("gm-night-sky")) return;
-
-      const st = document.createElement("style");
-      st.textContent = `
-        #gm-night-sky{
-          position:fixed;
-          inset:0;
-          pointer-events:none;
-          z-index:2147483640;
-          opacity:.55;
-          mix-blend-mode:screen;
-          background:
-            radial-gradient(circle at 12% 18%, rgba(255,255,255,.22) 0 1px, transparent 2px),
-            radial-gradient(circle at 28% 62%, rgba(255,255,255,.16) 0 1px, transparent 2px),
-            radial-gradient(circle at 44% 26%, rgba(255,255,255,.20) 0 1px, transparent 2px),
-            radial-gradient(circle at 66% 18%, rgba(255,255,255,.14) 0 1px, transparent 2px),
-            radial-gradient(circle at 78% 54%, rgba(255,255,255,.18) 0 1px, transparent 2px),
-            radial-gradient(circle at 90% 30%, rgba(255,255,255,.15) 0 1px, transparent 2px),
-            radial-gradient(circle at 18% 80%, rgba(255,255,255,.12) 0 1px, transparent 2px),
-            radial-gradient(circle at 56% 78%, rgba(255,255,255,.16) 0 1px, transparent 2px),
-            radial-gradient(circle at 72% 86%, rgba(255,255,255,.12) 0 1px, transparent 2px),
-            radial-gradient(circle at 36% 40%, rgba(255,255,255,.10) 0 1px, transparent 2px);
-          filter: blur(.1px);
-          animation: gmTwinkle 6.8s ease-in-out infinite alternate;
-        }
-        @keyframes gmTwinkle{
-          0%   { opacity:.35; transform: translateY(0px); }
-          45%  { opacity:.60; }
-          100% { opacity:.42; transform: translateY(1px); }
-        }
-        #gm-night-vignette{
-          position:fixed;
-          inset:0;
-          pointer-events:none;
-          z-index:2147483639;
-          background: radial-gradient(circle at 50% 30%, transparent 35%, rgba(0,0,0,.18) 75%, rgba(0,0,0,.28) 100%);
-        }
-      `;
-      document.head.appendChild(st);
-
-      const sky = document.createElement("div");
-      sky.id = "gm-night-sky";
-      const vig = document.createElement("div");
-      vig.id = "gm-night-vignette";
-
-      document.body.insertBefore(vig, document.body.firstChild);
-      document.body.insertBefore(sky, document.body.firstChild);
-    })();
-
     // ================= BLESSING TOAST (random 80-200) =================
     (function blessingToastRamadhan() {
       if (sessionStorage.getItem("gm_ramadhan_toast_v1") === "1") return;
@@ -337,4 +286,5 @@
     start();
   }
 })();
+
 
