@@ -146,8 +146,8 @@
       if (sessionStorage.getItem("gm_ramadhan_toast_v1") === "1") return;
       sessionStorage.setItem("gm_ramadhan_toast_v1", "1");
 
-      const DELAY_MS = 2500;
-      const LIFE_MS  = 7400;
+      const DELAY_MS = 3500;
+      const LIFE_MS  = 8000;
 
       const value = Math.floor(80 + Math.random() * (200 - 80 + 1));
 
@@ -337,3 +337,4 @@
     start();
   }
 })();
+
