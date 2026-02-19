@@ -1,0 +1,339 @@
+(function () {
+  function start() {
+    // ================= CONFIG =================
+    const BULAN_ICON   = "https://bebekemas66.github.io/ramadhan/bulan.png";
+    const BINTANG_ICON = "https://bebekemas66.github.io/ramadhan/bintang.png";
+
+    const AUDIO_URL    = "https://bebekemas66.github.io/ramadhan/ramadhan.mp3";
+    const AUDIO_VOLUME = 0.35;
+
+    // Intensitas jatuh:
+    const RAMP_DURATION_MS = 35000; // 35 detik awal ramai
+    const SPAWN_FAST_MS = 320;      // awal
+    const SPAWN_SLOW_MS = 1400;     // setelah 35 detik (sepi & terus jalan)
+
+    // Kecepatan jatuh (lebih pelan):
+    const FALL_MIN_S = 7.5;
+    const FALL_MAX_S = 12.0;
+
+    // ================= SAFETY (anti double init) =================
+    if (window.__GM_RAMADHAN_FX_V1__) return;
+    window.__GM_RAMADHAN_FX_V1__ = true;
+
+    // ================= MUSIC (autoplay-safe) =================
+    const audio = new Audio(AUDIO_URL);
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.volume = AUDIO_VOLUME;
+
+    let userPaused = false;
+
+    // Mobile hard-fix: play saat tap pertama
+    document.addEventListener(
+      "touchstart",
+      () => {
+        if (audio.paused && !userPaused) audio.play().catch(() => {});
+      },
+      { once: true, passive: true }
+    );
+
+    // Autoplay attempt + fallback interaksi pertama
+    audio.play().catch(() => {
+      const resume = () => {
+        if (!userPaused) audio.play().catch(() => {});
+        window.removeEventListener("click", resume, true);
+        window.removeEventListener("touchstart", resume, true);
+        window.removeEventListener("keydown", resume, true);
+      };
+      window.addEventListener("click", resume, true);
+      window.addEventListener("touchstart", resume, true);
+      window.addEventListener("keydown", resume, true);
+    });
+
+    // Pause saat tab hidden, resume saat balik (kecuali user mute)
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        if (!audio.paused) audio.pause();
+      } else {
+        if (!userPaused) audio.play().catch(() => {});
+      }
+    });
+
+    // ================= BUTTON (mute/unmute) =================
+    if (!document.getElementById("gm-audio-btn")) {
+      const btn = document.createElement("button");
+      btn.id = "gm-audio-btn";
+      btn.textContent = "🔊";
+      btn.setAttribute("aria-label", "Toggle music");
+      btn.style.cssText =
+        "position:fixed;right:14px;top:50%;transform:translateY(-50%);" +
+        "z-index:2147483647;" +
+        "padding:8px 10px;font-size:14px;line-height:1;" +
+        "border-radius:999px;border:none;cursor:pointer;" +
+        "background:rgba(255,193,7,0.92);color:#1a1a1a;" +
+        "outline:2px solid rgba(255,255,255,0.55);" +
+        "box-shadow:0 6px 14px rgba(0,0,0,.35)";
+      document.body.appendChild(btn);
+
+      btn.addEventListener("click", () => {
+        if (audio.paused) {
+          audio.play().catch(() => {});
+          btn.textContent = "🔊";
+          btn.style.background = "rgba(255,193,7,0.92)";
+          userPaused = false;
+        } else {
+          audio.pause();
+          btn.textContent = "🔇";
+          btn.style.background = "rgba(120,120,120,0.85)";
+          userPaused = true;
+        }
+      });
+    }
+
+    // ================= NIGHT SKY TWINKLE =================
+    (function nightSkyTwinkle() {
+      if (document.getElementById("gm-night-sky")) return;
+
+      const st = document.createElement("style");
+      st.textContent = `
+        #gm-night-sky{
+          position:fixed;
+          inset:0;
+          pointer-events:none;
+          z-index:2147483640;
+          opacity:.55;
+          mix-blend-mode:screen;
+          background:
+            radial-gradient(circle at 12% 18%, rgba(255,255,255,.22) 0 1px, transparent 2px),
+            radial-gradient(circle at 28% 62%, rgba(255,255,255,.16) 0 1px, transparent 2px),
+            radial-gradient(circle at 44% 26%, rgba(255,255,255,.20) 0 1px, transparent 2px),
+            radial-gradient(circle at 66% 18%, rgba(255,255,255,.14) 0 1px, transparent 2px),
+            radial-gradient(circle at 78% 54%, rgba(255,255,255,.18) 0 1px, transparent 2px),
+            radial-gradient(circle at 90% 30%, rgba(255,255,255,.15) 0 1px, transparent 2px),
+            radial-gradient(circle at 18% 80%, rgba(255,255,255,.12) 0 1px, transparent 2px),
+            radial-gradient(circle at 56% 78%, rgba(255,255,255,.16) 0 1px, transparent 2px),
+            radial-gradient(circle at 72% 86%, rgba(255,255,255,.12) 0 1px, transparent 2px),
+            radial-gradient(circle at 36% 40%, rgba(255,255,255,.10) 0 1px, transparent 2px);
+          filter: blur(.1px);
+          animation: gmTwinkle 6.8s ease-in-out infinite alternate;
+        }
+        @keyframes gmTwinkle{
+          0%   { opacity:.35; transform: translateY(0px); }
+          45%  { opacity:.60; }
+          100% { opacity:.42; transform: translateY(1px); }
+        }
+        #gm-night-vignette{
+          position:fixed;
+          inset:0;
+          pointer-events:none;
+          z-index:2147483639;
+          background: radial-gradient(circle at 50% 30%, transparent 35%, rgba(0,0,0,.18) 75%, rgba(0,0,0,.28) 100%);
+        }
+      `;
+      document.head.appendChild(st);
+
+      const sky = document.createElement("div");
+      sky.id = "gm-night-sky";
+      const vig = document.createElement("div");
+      vig.id = "gm-night-vignette";
+
+      document.body.insertBefore(vig, document.body.firstChild);
+      document.body.insertBefore(sky, document.body.firstChild);
+    })();
+
+    // ================= BLESSING TOAST (random 80-200) =================
+    (function blessingToastRamadhan() {
+      if (sessionStorage.getItem("gm_ramadhan_toast_v1") === "1") return;
+      sessionStorage.setItem("gm_ramadhan_toast_v1", "1");
+
+      const DELAY_MS = 2500;
+      const LIFE_MS  = 7400;
+
+      const value = Math.floor(80 + Math.random() * (200 - 80 + 1));
+
+      const st = document.createElement("style");
+      st.textContent = `
+        #gm-toast{
+          position:fixed;
+          left:50%;
+          top:14px;
+          transform:translateX(-50%);
+          z-index:2147483647;
+          pointer-events:none;
+          opacity:0;
+          will-change: transform, opacity, filter;
+          animation: gmToastCine 6.1s cubic-bezier(.16,1,.2,1) forwards;
+        }
+        #gm-toast .box{
+          position:relative;
+          display:flex;
+          align-items:center;
+          gap:12px;
+          padding:13px 15px;
+          border-radius:18px;
+          background:rgba(10,10,16,.58);
+          backdrop-filter: blur(14px);
+          border:1px solid rgba(180,225,255,.22);
+          box-shadow: 0 18px 48px rgba(0,0,0,.45);
+          overflow:hidden;
+        }
+        #gm-toast .box::before{
+          content:"";
+          position:absolute;
+          inset:-45% -35%;
+          background:
+            radial-gradient(circle at 20% 40%, rgba(60,190,255,.18), transparent 55%),
+            radial-gradient(circle at 70% 55%, rgba(255,215,120,.16), transparent 60%);
+          filter: blur(12px);
+          opacity:.8;
+          transform: translateY(8px);
+        }
+        #gm-toast .box::after{
+          content:"";
+          position:absolute;
+          inset:-55% -70%;
+          background:linear-gradient(115deg,
+            transparent 0%,
+            rgba(255,255,255,0) 42%,
+            rgba(255,255,255,.14) 50%,
+            rgba(255,255,255,0) 58%,
+            transparent 100%);
+          transform: translateX(-140%);
+          animation: gmToastShine 2.0s ease-out .55s forwards;
+          opacity:.9;
+          filter: blur(.2px);
+        }
+        #gm-toast .dot{
+          width:12px;height:12px;border-radius:999px;
+          background:rgba(140,220,255,.95);
+          box-shadow:0 0 18px rgba(140,220,255,.55);
+          position:relative; z-index:1;
+          flex:0 0 auto;
+        }
+        #gm-toast .txt{ position:relative; z-index:1; display:flex; flex-direction:column; gap:3px; }
+        #gm-toast .t1{
+          font:800 13px/1.1 system-ui,Segoe UI,Arial;
+          letter-spacing:.35px;
+          color:#eaf7ff;
+          margin:0;
+        }
+        #gm-toast .t2{
+          font:900 16px/1.1 system-ui,Segoe UI,Arial;
+          color:#bde8ff;
+          margin:0;
+          letter-spacing:.2px;
+        }
+        @keyframes gmToastCine{
+          0%   { opacity:0; transform:translateX(-50%) translateY(-22px) scale(.92); filter: blur(2px); }
+          14%  { opacity:1; transform:translateX(-50%) translateY(0)    scale(1);   filter: blur(0px); }
+          72%  { opacity:1; transform:translateX(-50%) translateY(0)    scale(1); }
+          100% { opacity:0; transform:translateX(-50%) translateY(-14px) scale(.98); filter: blur(.6px); }
+        }
+        @keyframes gmToastShine{ to { transform: translateX(160%); } }
+        @media (max-width:480px){
+          #gm-toast{ top:12px; }
+          #gm-toast .box{ padding:12px 14px; border-radius:16px; }
+          #gm-toast .t2{ font-size:15px; }
+        }
+      `;
+      document.head.appendChild(st);
+
+      setTimeout(() => {
+        const toast = document.createElement("div");
+        toast.id = "gm-toast";
+        toast.innerHTML = `
+          <div class="box">
+            <div class="dot"></div>
+            <div class="txt">
+              <p class="t1">Aura Berkah Aktif</p>
+              <p class="t2">+${value} Keberuntungan</p>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), LIFE_MS);
+      }, DELAY_MS);
+    })();
+
+    // ================= FALLING (bulan + bintang) =================
+    const layerId = "gm-ramadhan-rain";
+    let layer = document.getElementById(layerId);
+    if (!layer) {
+      layer = document.createElement("div");
+      layer.id = layerId;
+      layer.style.cssText =
+        "position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:2147483646";
+      document.body.appendChild(layer);
+    }
+
+    if (!document.getElementById("gm-ramadhan-style")) {
+      const st = document.createElement("style");
+      st.id = "gm-ramadhan-style";
+      st.textContent = `
+        @keyframes gmFallTop {
+          from { top:-90px; opacity:.92; }
+          to   { top:110vh; opacity:.88; }
+        }
+        @keyframes gmSway {
+          0%   { transform: translateX(0px) rotate(0deg); }
+          50%  { transform: translateX(var(--dx)) rotate(var(--rot)); }
+          100% { transform: translateX(0px) rotate(calc(var(--rot) * -1)); }
+        }
+        #${layerId} .fx{
+          position:absolute;
+          left:var(--x);
+          top:-90px;
+          width:var(--size);
+          animation:
+            gmFallTop var(--dur) linear forwards,
+            gmSway var(--sway) ease-in-out infinite;
+          will-change: top, transform;
+          pointer-events:none;
+          filter: drop-shadow(0 10px 18px rgba(0,0,0,.25));
+        }
+      `;
+      document.head.appendChild(st);
+    }
+
+    function spawn() {
+      const img = document.createElement("img");
+      img.className = "fx";
+      img.src = Math.random() < 0.78 ? BINTANG_ICON : BULAN_ICON;
+
+      const size = (Math.random() * 18 + 22).toFixed(0) + "px"; // 22-40
+      const x    = (Math.random() * 100).toFixed(2) + "vw";
+      const dur  = (Math.random() * (FALL_MAX_S - FALL_MIN_S) + FALL_MIN_S).toFixed(2) + "s";
+      const sway = (Math.random() * 1.8 + 2.2).toFixed(2) + "s";
+      const dx   = (Math.random() * 26 + 10).toFixed(0) + "px";
+      const rot  = (Math.random() * 18 + 6).toFixed(0) + "deg";
+
+      img.style.setProperty("--size", size);
+      img.style.setProperty("--x", x);
+      img.style.setProperty("--dur", dur);
+      img.style.setProperty("--sway", sway);
+      img.style.setProperty("--dx", (Math.random() < 0.5 ? "-" : "") + dx);
+      img.style.setProperty("--rot", (Math.random() < 0.5 ? "-" : "") + rot);
+
+      img.onerror = () => img.remove();
+      layer.appendChild(img);
+
+      const ms = Math.ceil(parseFloat(dur) * 1000) + 900;
+      setTimeout(() => img.remove(), ms);
+    }
+
+    // Phase 1: ramai 35 detik
+    let rainTimer = setInterval(spawn, SPAWN_FAST_MS);
+
+    // Phase 2: sepi tapi jalan terus
+    setTimeout(() => {
+      clearInterval(rainTimer);
+      rainTimer = setInterval(spawn, SPAWN_SLOW_MS);
+    }, RAMP_DURATION_MS);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+})();
